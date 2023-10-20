@@ -1,0 +1,54 @@
+# Create a namespace "Ecommerce"  
+apiVersion: v1 
+kind: Namespace 
+metadata: 
+    name: namespace-mysqlaksdemo 
+    labels: 
+        name: ecommerce 
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-mysql-aks
+  namespace: namespace-mysqlaksdemo 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: springboot-mysql-aks
+  template:
+    metadata:
+      labels:
+        app: springboot-mysql-aks
+    spec:
+      containers:
+      - name: springboot-mysql-aks
+        image: mysqlaksdemoregistryukw.azurecr.io/springboot-mysql-aks:latest
+        env:
+        - name: DATABASE_HOST
+          value: "mysql-mysqlaksdemo.mysql.database.azure.com"
+        - name: DATABASE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        - name: DATABASE_NAME    
+          value: "demo"     
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-mysql-aks
+  namespace: namespace-mysqlaksdemo
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: springboot-mysql-aks
